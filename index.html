@@ -63,13 +63,48 @@ mark{background:transparent; color:var(--accent); font-weight:700;}
 
 .empty{text-align:center; color:var(--sub); padding:40px 10px; font-size:14px;}
 footer{text-align:center; color:var(--sub); font-size:12px; margin-top:28px;}
+
+.loading{
+  display:flex; align-items:center; gap:10px;
+  color:var(--sub); font-size:13.5px; padding:24px 4px;
+}
+.spinner{
+  width:16px; height:16px; border-radius:50%;
+  border:2px solid var(--line); border-top-color:var(--accent);
+  animation:spin .7s linear infinite; flex:none;
+}
+@keyframes spin{ to{ transform:rotate(360deg); } }
+
+.skeleton{ display:flex; flex-direction:column; gap:8px; }
+.skel-card{
+  background:var(--card); border:1px solid var(--line); border-radius:10px;
+  padding:12px 14px; overflow:hidden; position:relative;
+}
+.skel-line{
+  height:12px; border-radius:6px; background:var(--line);
+  position:relative; overflow:hidden;
+}
+.skel-line.w60{width:60%;} .skel-line.w40{width:40%; margin-top:8px;}
+.skel-line.w30{width:30%; margin-top:10px;}
+.skel-line::after{
+  content:''; position:absolute; inset:0;
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,.35), transparent);
+  transform:translateX(-100%);
+  animation:shimmer 1.3s infinite;
+}
+@media (prefers-color-scheme: dark){
+  .skel-line::after{ background:linear-gradient(90deg, transparent, rgba(255,255,255,.08), transparent); }
+}
+@keyframes shimmer{ to{ transform:translateX(100%); } }
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
     <h1>泰康人寿职业分类表查询</h1>
-    <p class="meta" id="meta">2025年修订版 · 正在加载数据…</p>
+    <p class="meta" id="meta">
+      <span class="loading"><span class="spinner"></span>2025年修订版 · 正在加载数据…</span>
+    </p>
   </header>
 
   <div class="searchbar">
@@ -86,7 +121,12 @@ footer{text-align:center; color:var(--sub); font-size:12px; margin-top:28px;}
   </div>
 
   <p class="count" id="count"></p>
-  <div class="list" id="list"></div>
+  <div class="list skeleton" id="list">
+    <div class="skel-card"><div class="skel-line w60"></div><div class="skel-line w40"></div><div class="skel-line w30"></div></div>
+    <div class="skel-card"><div class="skel-line w60"></div><div class="skel-line w40"></div><div class="skel-line w30"></div></div>
+    <div class="skel-card"><div class="skel-line w60"></div><div class="skel-line w40"></div><div class="skel-line w30"></div></div>
+    <div class="skel-card"><div class="skel-line w60"></div><div class="skel-line w40"></div><div class="skel-line w30"></div></div>
+  </div>
   <div class="empty" id="empty" style="display:none;">没有找到匹配的职业，换个关键词试试</div>
 
   <footer>数据来源：泰康人寿职业分类表（2025年修订版）· 行业大类/二级分类为自动整理结果，个别边界条目可能与原表存在细微差异；职业代码/名称/职业类别/高危标识以原表为准</footer>
@@ -111,6 +151,7 @@ fetch('data.json')
   .then(json => {
     DATA = json;
     metaEl.textContent = `2025年修订版 · 共 ${DATA.length} 条职业记录 · 模糊搜索行业/职业/代码`;
+    listEl.classList.remove('skeleton');
     qEl.disabled = false; fBig.disabled = false; fLevel.disabled = false; fDanger.disabled = false;
 
     const bigs = [...new Set(DATA.map(d=>d.big).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'zh'));
@@ -130,6 +171,8 @@ fetch('data.json')
   })
   .catch(err => {
     metaEl.textContent = '数据加载失败：请确认 data.json 与 index.html 在同一目录下，且通过 http(s):// 访问（不能直接双击打开本地文件）';
+    listEl.classList.remove('skeleton');
+    listEl.innerHTML = '';
     console.error(err);
   });
 
